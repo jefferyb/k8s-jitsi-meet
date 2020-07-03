@@ -23,7 +23,7 @@ spec:
   # tls:
   #   - hosts:
   #       - meet.example.com
-  #     secretName: letsencrypt-prod
+  #     secretName: letsencrypt-prod-jitsi
   rules:
     - host: meet.example.com
       http:

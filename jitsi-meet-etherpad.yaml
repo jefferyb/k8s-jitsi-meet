@@ -1,0 +1,80 @@
+#
+# If you want to use an Ingress to access etherpad at etherpad.example.com, then change:
+#   - etherpad.example.com: <Set to the Public URL for the web service>
+#
+# OPTIONAL: 
+#   - Un-comment/Update the lines in the Ingress section to use TLS
+#
+####### </ Jeffery Bagirimvano >
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: etherpad
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: etherpad-service
+spec:
+  ports:
+    - name: "9001-tcp"
+      port: 9001
+      targetPort: 9001
+  selector:
+    component: etherpad
+---
+### Etherpad
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etherpad
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: etherpad
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: etherpad
+  template:
+    metadata:
+      labels:
+        component: etherpad
+    spec:
+      containers:
+        - name: etherpad
+          image: jitsi/etherpad:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9001
+              protocol: TCP
+---
+### OPTIONAL: Un-comment below if you want to use Ingress to access etherpad at etherpad.example.com
+# apiVersion: networking.k8s.io/v1beta1
+# kind: Ingress
+# metadata:
+#   name: etherpad-ingress
+#   namespace: jitsi-meet
+#   labels:
+#     app: jitsi-meet
+#     component: etherpad-ingress
+#   ### OPTIONAL: Un-comment the next 2 lines to use TLS 
+#   # annotations:
+#   #   cert-manager.io/cluster-issuer: "letsencrypt-prod"
+# spec:
+#   ### OPTIONAL: Un-comment the next 4 lines to use TLS 
+#   # tls:
+#   #   - hosts:
+#   #       - etherpad.example.com
+#   #     secretName: letsencrypt-prod-etherpad
+#   rules:
+#     - host: etherpad.example.com
+#       http:
+#         paths:
+#           - path: /
+#             backend:
+#               serviceName: etherpad
+#               servicePort: 9001-tcp

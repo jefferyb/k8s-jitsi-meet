@@ -43,69 +43,93 @@ ref:
 
 ## 4. Optional: Apply `jitsi-meet-configmap.yaml`
 If you want to configure the interface, such as the title of the application, etc.., then:
-  * edit `jitsi-meet-configmap.yaml` with your settings, 
+  * edit `jitsi-meet-configmap.yaml` with your settings, if you want to change anything
   * edit `jitsi-meet-k8s.yaml` and un-comment the sections under the volumeMounts & volumes in the jitsi Deployment section from
-  ```yaml
-          volumeMounts:
+      ```yaml
+              volumeMounts:
+                ### OPTIONAL: Un-comment the next 3 lines to use the configMap
+                # - name: jitsi-interface-config
+                #   subPath: interface_config
+                #   mountPath: /config/interface_config.js
+          volumes:
             ### OPTIONAL: Un-comment the next 3 lines to use the configMap
             # - name: jitsi-interface-config
-            #   subPath: interface_config
-            #   mountPath: /config/interface_config.js
-      volumes:
-        ### OPTIONAL: Un-comment the next 3 lines to use the configMap
-        # - name: jitsi-interface-config
-        #   configMap:
-        #     name: jitsi-interface-config
-  ```
-  to 
-  ```yaml
-          volumeMounts:
+            #   configMap:
+            #     name: jitsi-interface-config
+      ```
+      to
+      ```yaml
+              volumeMounts:
+                - name: jitsi-config
+                  mountPath: /config
+                ### OPTIONAL: Un-comment the next 3 lines to use the configMap
+                - name: jitsi-interface-config
+                  subPath: interface_config
+                  mountPath: /config/interface_config.js
+          volumes:
             - name: jitsi-config
-              mountPath: /config
+              emptyDir: {}
             ### OPTIONAL: Un-comment the next 3 lines to use the configMap
             - name: jitsi-interface-config
-              subPath: interface_config
-              mountPath: /config/interface_config.js
-      volumes:
-        - name: jitsi-config
-          emptyDir: {}
-        ### OPTIONAL: Un-comment the next 3 lines to use the configMap
-        - name: jitsi-interface-config
-          configMap:
-            name: jitsi-interface-config
-  ```
+              configMap:
+                name: jitsi-interface-config
+      ```
   * apply it with:
 
-```bash
-$ kubectl apply -f jitsi-meet-configmap.yaml
-```
+    ```bash
+    $ kubectl apply -f jitsi-meet-configmap.yaml
+    ```
 
-## 5. Apply `jitsi-meet-k8s.yaml`
-Deploy the Jutsi and other services
+## 5. Optional: Apply `jitsi-meet-etherpad.yaml`
+If you want to have Etherpad integration (for document sharing), then:
+  * edit `jitsi-meet-etherpad.yaml` if you want to configure an Ingress rule to access etherpad at a url, etherpad.example.com. If you just want to integrate it into Jitsi, then just apply `jitsi-meet-etherpad.yaml` as it is.
+  * edit `jitsi-meet-k8s.yaml` and un-comment the `ETHERPAD_URL_BASE` env. variable in the jitsi Deployment section from
+    ```yaml
+                ### OPTIONAL: Un-comment the next 2 lines to use Etherpad integration (for document sharing) and apply 'jitsi-meet-etherpad.yaml'
+                # - name: ETHERPAD_URL_BASE
+                #   value: http://etherpad:9001
+    ```
+    to
+    ```yaml
+                ### OPTIONAL: Un-comment the next 2 lines to use Etherpad integration (for document sharing) and apply 'jitsi-meet-etherpad.yaml'
+                - name: ETHERPAD_URL_BASE
+                  value: http://etherpad:9001
+    ```
+  * apply it with:
+
+    ```bash
+    $ kubectl apply -f jitsi-meet-etherpad.yaml
+    ```
+
+## 6. Apply `jitsi-meet-k8s.yaml`
+Deploy Jitsi and the other services
 
 ```bash
 $ kubectl apply -f jitsi-meet-k8s.yaml
 ```
 
-## 6. Apply `jitsi-meet-ingress.yaml`
+## 7. Apply `jitsi-meet-ingress.yaml`
 Change/edit the hostname, meet.example.com, and set it to the Public URL for the web service with
 
 ```bash
 $ kubectl apply -f jitsi-meet-ingress.yaml
 ```
 
-## 7. Check on the deployment:
+Give it a minute for the ingress to get a certificate...
+
+## 8. Check on the deployment:
 ```bash
 $ kubectl get pod -n jitsi-meet
 NAME                       READY   STATUS    RESTARTS   AGE
+etherpad-694c885bb-wk4k4   1/1     Running   0          3h54m
 jicofo-555df7f495-wqvld    1/1     Running   0          3h52m
 jitsi-65bb9974f4-2lgnc     1/1     Running   0          3h52m
 jvb-758ff57c4f-j8898       1/1     Running   0          3h51m
 prosody-6446fd95fd-cn5nm   1/1     Running   0          3h52m
 ```
 
-## 8. Access the web UI 
-You should now be able to access your Jitsi Meet deployment at https://meet.example.com (or the Public URL that you set during step number 6)
+## 9. Access the web UI
+You should now be able to access your Jitsi Meet deployment at https://meet.example.com (or the Public URL that you set during step number 7)
 
 ref:
   * https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker

@@ -182,6 +182,9 @@ spec:
                 secretKeyRef:
                   name: jitsi-config
                   key: JIBRI_RECORDER_PASSWORD
+            ### OPTIONAL: Un-comment the next 2 lines to use Etherpad integration (for document sharing) and apply 'jitsi-meet-etherpad.yaml'
+            # - name: ETHERPAD_URL_BASE
+            #   value: http://etherpad:9001
           volumeMounts:
             - name: jitsi-config
               mountPath: /config
