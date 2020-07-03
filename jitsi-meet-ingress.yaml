@@ -1,0 +1,34 @@
+#
+# Change:
+#   - meet.example.com: <Set to the Public URL for the web service>
+#
+# OPTIONAL: 
+#   - Un-comment/Update the lines in the sections to use TLS
+#
+####### </ Jeffery Bagirimvano >
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: jitsi-ingress
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: jitsi-ingress
+  ### OPTIONAL: Un-comment the next 2 lines to use TLS 
+  # annotations:
+  #   cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ### OPTIONAL: Un-comment the next 4 lines to use TLS 
+  # tls:
+  #   - hosts:
+  #       - meet.example.com
+  #     secretName: letsencrypt-prod
+  rules:
+    - host: meet.example.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web
+              servicePort: http

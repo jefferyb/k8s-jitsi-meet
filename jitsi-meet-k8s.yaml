@@ -1,0 +1,425 @@
+#
+### 1. create the 'jitsi-meet' namespace:
+# $ kubectl create namespace jitsi-meet
+#
+### 2. Create the 'jitsi-config' secret:
+#   Make sure to change/set:
+#     - PUBLIC_URL: <Set to the Public URL for the web service>
+#     - DOCKER_HOST_ADDRESS: <Set the address for any node in the cluster here>
+# $ kubectl create secret generic jitsi-config -n jitsi-meet --from-literal=PUBLIC_URL='https://meet.example.com' --from-literal=DOCKER_HOST_ADDRESS='192.168.1.1' --from-literal=JICOFO_COMPONENT_SECRET="$(openssl rand -hex 16)" --from-literal=JICOFO_AUTH_PASSWORD="$(openssl rand -hex 16)" --from-literal=JVB_AUTH_PASSWORD="$(openssl rand -hex 16)" --from-literal=JIGASI_XMPP_PASSWORD="$(openssl rand -hex 16)" --from-literal=JIBRI_RECORDER_PASSWORD="$(openssl rand -hex 16)" --from-literal=JIBRI_XMPP_PASSWORD="$(openssl rand -hex 16)"
+#
+### 3. Add ( "10000": jitsi-meet/jvb:10000 ) to your nginx-ingress-udp-microk8s-conf/udp-services ConfigMap
+# $ kubectl edit configmap nginx-ingress-udp-microk8s-conf -n ingress
+#
+# And it should ( "10000": jitsi-meet/jvb:10000 ) under data, like:
+#      apiVersion: v1
+#      kind: ConfigMap
+#      metadata:
+#        name: nginx-ingress-udp-microk8s-conf
+#        namespace: ingress
+#      data:
+#        "10000": jitsi-meet/jvb:10000
+# ref: https://kubernetes.github.io/ingress-nginx/user-guide/exposing-tcp-udp-services/
+#      https://microk8s.io/docs/addon-ingress
+#
+### 4. Optional: 
+# Edit jitsi-meet-configmap.yaml, and un-comment the sections under the volumeMounts & volumes in the jitsi Deployment section and apply with 
+# $ kubectl apply -f jitsi-meet-configmap.yaml
+#
+### 5. Apply jitsi-meet-k8s.yaml
+# $ kubectl apply -f jitsi-meet-k8s.yaml
+#
+### 6. Apply jitsi-meet-ingress.yaml
+# Change/edit the host, meet.example.com, and set it to the Public URL for the web service with
+# $ kubectl apply -f jitsi-meet-ingress.yaml
+#
+### 7. Check on the deployment:
+#    $ kubectl get pod -n jitsi-meet
+#    NAME                       READY   STATUS    RESTARTS   AGE
+#    jicofo-555df7f495-wqvld    1/1     Running   0          3h52m
+#    jitsi-65bb9974f4-2lgnc     1/1     Running   0          3h52m
+#    jvb-758ff57c4f-j8898       1/1     Running   0          3h51m
+#    prosody-6446fd95fd-cn5nm   1/1     Running   0          3h52m
+#
+### 8. Access the web UI at https://meet.example.com (or the Public URL that you set during step number 6)
+#
+####### </ Jeffery Bagirimvano >
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: jitsi-namespace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: web-service
+spec:
+  ports:
+    - name: "http"
+      port: 80
+      targetPort: 80
+    - name: "https"
+      port: 443
+      targetPort: 443
+  selector:
+    component: jitsi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prosody
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: prosody-service
+spec:
+  ports:
+    - name: 5222-tcp
+      port: 5222
+      targetPort: 5222
+    - name: 5280-tcp
+      port: 5280
+      targetPort: 5280
+    - name: 5347-tcp
+      port: 5347
+      targetPort: 5347
+  selector:
+    component: prosody
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jvb
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: jvb-service
+spec:
+  ports:
+    - name: 4443-tcp
+      port: 4443
+      targetPort: 4443
+  selector:
+    component: jvb
+---
+### Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jitsi
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: jitsi
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: jitsi
+  template:
+    metadata:
+      labels:
+        component: jitsi
+    spec:
+      containers:
+        - name: web
+          image: jitsi/web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              protocol: TCP
+            - containerPort: 443
+              protocol: TCP
+          env:
+            - name: PUBLIC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: PUBLIC_URL
+            - name: XMPP_SERVER
+              value: prosody
+            - name: JICOFO_AUTH_USER
+              value: focus
+            - name: XMPP_DOMAIN
+              value: meet.jitsi
+            - name: XMPP_AUTH_DOMAIN
+              value: auth.meet.jitsi
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: internal-muc.meet.jitsi
+            - name: XMPP_BOSH_URL_BASE
+              value: http://prosody:5280
+            - name: XMPP_MUC_DOMAIN
+              value: muc.meet.jitsi
+            - name: TZ
+              value: America/Los_Angeles
+            - name: JVB_TCP_HARVESTER_DISABLED
+              value: "true"
+            - name: JIBRI_BREWERY_MUC
+              value: jibribrewery
+            - name: JIBRI_PENDING_TIMEOUT
+              value: '90'
+            - name: JIBRI_XMPP_USER
+              value: jibri
+            - name: JIBRI_XMPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JIBRI_XMPP_PASSWORD
+            - name: JIBRI_RECORDER_USER
+              value: recorder
+            - name: JIBRI_RECORDER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JIBRI_RECORDER_PASSWORD
+          volumeMounts:
+            - name: jitsi-config
+              mountPath: /config
+            ### OPTIONAL: Un-comment the next 3 lines to use the configMap
+            # - name: jitsi-interface-config
+            #   subPath: interface_config
+            #   mountPath: /config/interface_config.js
+            - name: letsencrypt-config
+              mountPath: /etc/letsencrypt
+            - name: jitsi-transcripts
+              mountPath: /usr/share/jitsi-meet/transcripts
+      volumes:
+        - name: jitsi-config
+          emptyDir: {}
+        ### OPTIONAL: Un-comment the next 3 lines to use the configMap
+        # - name: jitsi-interface-config
+        #   configMap:
+        #     name: jitsi-interface-config
+        - name: letsencrypt-config
+          emptyDir: {}
+        - name: jitsi-transcripts
+          emptyDir: {}
+---
+### XMPP server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prosody
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: prosody
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: prosody
+  template:
+    metadata:
+      labels:
+        component: prosody
+    spec:
+      containers:
+        - name: prosody
+          image: jitsi/prosody:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5222
+              protocol: TCP
+            - containerPort: 5269
+              protocol: TCP
+            - containerPort: 5280
+              protocol: TCP
+            - containerPort: 5347
+              protocol: TCP
+          env:
+            - name: XMPP_DOMAIN
+              value: meet.jitsi
+            - name: XMPP_AUTH_DOMAIN
+              value: auth.meet.jitsi
+            - name: XMPP_MUC_DOMAIN
+              value: muc.meet.jitsi
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: internal-muc.meet.jitsi
+            - name: JICOFO_COMPONENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_COMPONENT_SECRET
+            - name: JVB_AUTH_USER
+              value: jvb
+            - name: JVB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JVB_AUTH_PASSWORD
+            - name: JICOFO_AUTH_USER
+              value: focus
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_AUTH_PASSWORD
+            - name: TZ
+              value: America/Los_Angeles
+            - name: JVB_TCP_HARVESTER_DISABLED
+              value: "true"
+          volumeMounts:
+            - name: prosody-config
+              mountPath: /config
+            - name: prosody-custom-plugins
+              mountPath: /prosody-plugins-custom
+      volumes:
+        - name: prosody-config
+          emptyDir: {}
+        - name: prosody-custom-plugins
+          emptyDir: {}
+---
+### Focus component
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jicofo
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: jicofo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: jicofo
+  template:
+    metadata:
+      labels:
+        component: jicofo
+    spec:
+      containers:
+        - name: jicofo
+          image: jitsi/jicofo:latest
+          imagePullPolicy: Always
+          env:
+            - name: XMPP_SERVER
+              value: prosody
+            - name: XMPP_DOMAIN
+              value: meet.jitsi
+            - name: XMPP_AUTH_DOMAIN
+              value: auth.meet.jitsi
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: internal-muc.meet.jitsi
+            - name: JICOFO_COMPONENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_COMPONENT_SECRET
+            - name: JICOFO_AUTH_USER
+              value: focus
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_AUTH_PASSWORD
+            - name: TZ
+              value: America/Los_Angeles
+            - name: JVB_BREWERY_MUC
+              value: jvbbrewery
+            - name: JIGASI_BREWERY_MUC
+              value: jigasibrewery
+            - name: JIBRI_BREWERY_MUC
+              value: jibribrewery
+            - name: JIBRI_PENDING_TIMEOUT
+              value: '90'
+          volumeMounts:
+            - name: jicofo-config
+              mountPath: /config
+      volumes:
+        - name: jicofo-config
+          emptyDir: {}
+---
+### Video bridge
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jvb
+  namespace: jitsi-meet
+  labels:
+    app: jitsi-meet
+    component: jvb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      component: jvb
+  template:
+    metadata:
+      labels:
+        component: jvb
+    spec:
+      containers:
+        - name: jvb
+          image: jitsi/jvb:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4443
+              protocol: TCP
+            - name: proxy-udp-10000
+              containerPort: 10000
+              hostPort: 10000
+              protocol: UDP
+          env:
+            - name: XMPP_SERVER
+              value: prosody
+            - name: DOCKER_HOST_ADDRESS
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: DOCKER_HOST_ADDRESS
+            - name: XMPP_DOMAIN
+              value: meet.jitsi
+            - name: XMPP_AUTH_DOMAIN
+              value: auth.meet.jitsi
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              value: internal-muc.meet.jitsi
+            - name: JVB_STUN_SERVERS
+              value: stun.l.google.com:19302,stun1.l.google.com:19302,stun2.l.google.com:19302
+            - name: JICOFO_AUTH_USER
+              value: focus
+            - name: JVB_TCP_HARVESTER_DISABLED
+              value: "true"
+            - name: JVB_AUTH_USER
+              value: jvb
+            - name: JVB_PORT
+              value: "10000"
+            - name: JVB_TCP_PORT
+              value: "4443"
+            - name: JVB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JVB_AUTH_PASSWORD
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_AUTH_PASSWORD
+            - name: JVB_BREWERY_MUC
+              value: jvbbrewery
+            - name: TZ
+              value: America/Los_Angeles
+          volumeMounts:
+            - name: jvb-config
+              mountPath: /config
+      volumes:
+        - name: jvb-config
+          emptyDir: {}
