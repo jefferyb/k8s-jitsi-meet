@@ -109,3 +109,21 @@ You should now be able to access your Jitsi Meet deployment at https://meet.exam
 
 ref:
   * https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker
+
+
+# Useful commands
+
+Here are some useful `kubectl` commands
+
+```bash
+# Check on the 'jitsi-meet' events
+$ kubectl get events -n jitsi-meet --all-namespaces --watch
+
+# list ingress in 'jitsi-meet'
+$ kubectl get ingress -n jitsi-meet
+
+# check if the cert has been issued
+$ kubectl describe ingress etherpad-ingress -n jitsi-meet | grep 'Successfully created Certificate'
+    Normal  CreateCertificate  21m   cert-manager              Successfully created Certificate "letsencrypt-prod-etherpad"
+
+```

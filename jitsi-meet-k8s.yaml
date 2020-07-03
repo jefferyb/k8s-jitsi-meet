@@ -182,13 +182,16 @@ spec:
                 secretKeyRef:
                   name: jitsi-config
                   key: JIBRI_RECORDER_PASSWORD
+            ### OPTIONAL: Un-comment the next 2 lines to use Etherpad integration (for document sharing)
+            - name: ETHERPAD_URL_BASE
+              value: http://etherpad:9001
           volumeMounts:
             - name: jitsi-config
               mountPath: /config
             ### OPTIONAL: Un-comment the next 3 lines to use the configMap
-            # - name: jitsi-interface-config
-            #   subPath: interface_config
-            #   mountPath: /config/interface_config.js
+            - name: jitsi-interface-config
+              subPath: interface_config
+              mountPath: /config/interface_config.js
             - name: letsencrypt-config
               mountPath: /etc/letsencrypt
             - name: jitsi-transcripts
@@ -197,9 +200,9 @@ spec:
         - name: jitsi-config
           emptyDir: {}
         ### OPTIONAL: Un-comment the next 3 lines to use the configMap
-        # - name: jitsi-interface-config
-        #   configMap:
-        #     name: jitsi-interface-config
+        - name: jitsi-interface-config
+          configMap:
+            name: jitsi-interface-config
         - name: letsencrypt-config
           emptyDir: {}
         - name: jitsi-transcripts

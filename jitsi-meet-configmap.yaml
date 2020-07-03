@@ -25,13 +25,13 @@ data:
         INITIAL_TOOLBAR_TIMEOUT: 20000,
         TOOLBAR_TIMEOUT: 4000,
         TOOLBAR_ALWAYS_VISIBLE: false,
-        DEFAULT_REMOTE_DISPLAY_NAME: 'Fellow Jitster',
+        DEFAULT_REMOTE_DISPLAY_NAME: 'Fellow Family Member',
         DEFAULT_LOCAL_DISPLAY_NAME: 'me',
-        SHOW_JITSI_WATERMARK: true,
+        SHOW_JITSI_WATERMARK: false,
         JITSI_WATERMARK_LINK: 'https://jitsi.org',
 
         // if watermark is disabled by default, it can be shown only for guests
-        SHOW_WATERMARK_FOR_GUESTS: true,
+        SHOW_WATERMARK_FOR_GUESTS: false,
         SHOW_BRAND_WATERMARK: false,
         BRAND_WATERMARK_LINK: '',
         SHOW_POWERED_BY: false,
@@ -39,7 +39,7 @@ data:
         GENERATE_ROOMNAMES_ON_WELCOME_PAGE: true,
         DISPLAY_WELCOME_PAGE_CONTENT: true,
         DISPLAY_WELCOME_PAGE_TOOLBAR_ADDITIONAL_CONTENT: false,
-        APP_NAME: 'Jitsi Meet',
+        APP_NAME: 'Tuganire',
         NATIVE_APP_NAME: 'Jitsi Meet',
         PROVIDER_NAME: 'Jitsi',
         LANG_DETECTION: true, // Allow i18n to detect the system language
