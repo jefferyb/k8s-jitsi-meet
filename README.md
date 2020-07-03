@@ -111,6 +111,23 @@ ref:
   * https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker
 
 
+## 9. Update images weekly
+If you want to update the latest images weekly, then edit crontab with
+```bash
+$ crontab -e
+
+#Ansible: etherpad
+0 3 * * 0 microk8s.kubectl rollout restart deployment/etherpad
+#Ansible: jitsi
+3 3 * * 0 microk8s.kubectl rollout restart deployment/jitsi
+#Ansible: prosody
+5 3 * * 0 microk8s.kubectl rollout restart deployment/prosody
+#Ansible: jicofo
+7 3 * * 0 microk8s.kubectl rollout restart deployment/jicofo
+#Ansible: jvb
+9 3 * * 0 microk8s.kubectl rollout restart deployment/jvb
+```
+
 # Useful commands
 
 Here are some useful `kubectl` commands
