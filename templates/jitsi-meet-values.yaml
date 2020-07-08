@@ -1,0 +1,25 @@
+#@data/values
+---
+namespace:
+  name: jitsi-meet
+  create: True
+
+ingress_cluster_issuer: 'letsencrypt-prod'
+tz: 'America/Los_Angeles'
+docker_host_address: '192.168.1.1'
+use_configmap: False
+
+jitsi: 
+  ingress: 
+    enable: True
+    hostname: meet.example.com
+    enable_tls: False
+
+etherpad:
+  enabled: True
+  ingress: 
+    #! If enabled, you can access it at the hostname that you set below... Otherwise, you'll just access it from a jitsi meeting/call
+    enable: False
+    hostname: etherpad.example.com
+    enable_tls: False
+

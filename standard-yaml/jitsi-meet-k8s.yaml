@@ -11,7 +11,7 @@
 ### 3. Add ( "10000": jitsi-meet/jvb:10000 ) to your nginx-ingress-udp-microk8s-conf/udp-services ConfigMap
 # $ kubectl edit configmap nginx-ingress-udp-microk8s-conf -n ingress
 #
-# And it should ( "10000": jitsi-meet/jvb:10000 ) under data, like:
+# And it should have ( "10000": jitsi-meet/jvb:10000 ) under data, like:
 #      apiVersion: v1
 #      kind: ConfigMap
 #      metadata:
