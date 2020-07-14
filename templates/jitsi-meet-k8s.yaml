@@ -213,7 +213,7 @@ spec:
                 secretKeyRef:
                   name: jitsi-config
                   key: JIBRI_RECORDER_PASSWORD
-            #@ if data.values.etherpad.ingress.enable:
+            #@ if data.values.etherpad.enable:
             - name: ETHERPAD_URL_BASE
               value: http://etherpad:9001
             #@ end
@@ -458,7 +458,7 @@ spec:
         - name: jvb-config
           emptyDir: {}
 
-#@ if data.values.etherpad.enabled:
+#@ if data.values.etherpad.enable:
 #! ### Etherpad integration (for document sharing)
 ---
 apiVersion: v1

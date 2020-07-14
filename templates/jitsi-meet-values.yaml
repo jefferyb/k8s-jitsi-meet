@@ -16,7 +16,7 @@ jitsi:
     enable_tls: False
 
 etherpad:
-  enabled: True
+  enable: True
   ingress: 
     #! If enabled, you can access it at the hostname that you set below... Otherwise, you'll just access it from a jitsi meeting/call
     enable: False
