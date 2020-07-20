@@ -1,0 +1,21 @@
+# 
+# kubectl create namespace jitsi-meet
+# kubectl create secret generic jitsi-config -n jitsi-meet --from-literal=PUBLIC_URL='https://meet.your-host.com' --from-literal=DOCKER_HOST_ADDRESS='192.168.1.1' --from-literal=JICOFO_COMPONENT_SECRET="$(openssl rand -hex 16)" --from-literal=JICOFO_AUTH_PASSWORD="$(openssl rand -hex 16)" --from-literal=JVB_AUTH_PASSWORD="$(openssl rand -hex 16)" --from-literal=JIGASI_XMPP_PASSWORD="$(openssl rand -hex 16)" --from-literal=JIBRI_RECORDER_PASSWORD="$(openssl rand -hex 16)" --from-literal=JIBRI_XMPP_PASSWORD="$(openssl rand -hex 16)"
+# 
+####### </ Jeffery Bagirimvano >
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - jitsi
+  - jitsi-etherpad
+
+namespace: jitsi-meet
+
+patchesJson6902:
+  - path: meet-ingress-patch.yaml
+    target:
+      group: networking.k8s.io
+      version: v1beta1
+      kind: Ingress
+      name: jitsi-ingress

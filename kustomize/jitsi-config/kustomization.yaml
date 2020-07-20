@@ -1,0 +1,16 @@
+resources:
+  - ../jitsi
+
+patchesJson6902:
+  - path: interface-config-volumes-patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: jitsi
+      namespace: jitsi-meet
+
+configMapGenerator:
+  - name: jitsi-interface-config
+    files:
+      - interface_config.js

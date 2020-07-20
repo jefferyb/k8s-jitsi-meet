@@ -1,0 +1,13 @@
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: jitsi-interface-config
+    subPath: interface_config.js
+    mountPath: /config/interface_config.js
+
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: jitsi-interface-config
+    configMap:
+      name: jitsi-interface-config
